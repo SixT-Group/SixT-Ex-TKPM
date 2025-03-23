@@ -1,8 +1,6 @@
 package com.example.sixt.models;
 
-import com.example.sixt.commons.Department;
-import com.example.sixt.commons.Gender;
-import com.example.sixt.commons.StudentStatus;
+import com.example.sixt.enums.Gender;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;

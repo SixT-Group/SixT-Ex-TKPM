@@ -1,4 +1,4 @@
-package com.example.sixt.validators.emails;
+package com.example.sixt.validators.email;
 
 
 import jakarta.validation.Constraint;
