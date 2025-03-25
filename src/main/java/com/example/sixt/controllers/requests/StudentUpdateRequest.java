@@ -1,13 +1,8 @@
 package com.example.sixt.controllers.requests;
 
-import com.example.sixt.commons.Department;
-import com.example.sixt.commons.Gender;
-import com.example.sixt.commons.StudentStatus;
-import jakarta.persistence.Column;
+import com.example.sixt.enums.Gender;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
 import java.io.Serializable;

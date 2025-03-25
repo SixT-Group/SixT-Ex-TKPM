@@ -1,13 +1,9 @@
 package com.example.sixt.controllers.responses;
 
-import com.example.sixt.commons.Department;
-import com.example.sixt.commons.Gender;
-import com.example.sixt.commons.StudentStatus;
+import com.example.sixt.enums.Gender;
 import com.example.sixt.models.AddressEntity;
 import com.example.sixt.models.IdentityDocumentEntity;
 import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.util.Date;
 import java.util.List;

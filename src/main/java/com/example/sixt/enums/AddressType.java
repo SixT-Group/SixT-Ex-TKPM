@@ -1,4 +1,4 @@
-package com.example.sixt.commons;
+package com.example.sixt.enums;
 
 public enum AddressType {
     PERMANENT,
