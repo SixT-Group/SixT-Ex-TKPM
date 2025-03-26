@@ -1,6 +1,6 @@
 package com.example.sixt.models;
 
-import com.example.sixt.commons.AddressType;
+import com.example.sixt.enums.AddressType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

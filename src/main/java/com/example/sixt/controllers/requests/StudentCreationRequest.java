@@ -1,8 +1,8 @@
 package com.example.sixt.controllers.requests;
 
-import com.example.sixt.commons.Department;
-import com.example.sixt.commons.Gender;
-import com.example.sixt.commons.StudentStatus;
+import com.example.sixt.enums.Gender;
+import com.example.sixt.validators.email.RestrictEmailDomain;
+import com.example.sixt.validators.phone.RestrictPhoneFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -13,139 +13,141 @@ import java.util.Date;
 import java.util.List;
 
 public class StudentCreationRequest implements Serializable {
-    @NotBlank(message = "Student id must be not blank")
-    private String studentId;
 
-    @NotBlank(message = "First name must be not blank")
-    private String fullName;
+  @NotBlank(message = "Student id must be not blank")
+  private String studentId;
 
-    private Date birthday;
+  @NotBlank(message = "First name must be not blank")
+  private String fullName;
 
-    @Enumerated(EnumType.STRING)
-    private Gender gender;
+  private Date birthday;
 
-    @NotBlank(message = "Department must be not blank")
-    private String department;
+  @Enumerated(EnumType.STRING)
+  private Gender gender;
 
-    private String course;
+  @NotBlank(message = "Department must be not blank")
+  private String department;
 
-    @NotBlank(message = "Program must be not blank")
-    private String program;
-    private String nationality;
+  private String course;
 
-    @Email(message = "Email invalid")
-    private String email;
+  @NotBlank(message = "Program must be not blank")
+  private String program;
+  private String nationality;
 
-    @Pattern(regexp = "^(0[3-9][0-9]{8}|\\+84[3-9][0-9]{8})$", message = "Invalid phone number format")
-    private String phoneNumber;
+  @Email(message = "Email invalid")
+  @RestrictEmailDomain(allowedDomain = "@student.university.edu.vn", message = "Email must be from university domain")
+  private String email;
 
-    private String status;
+ @RestrictPhoneFormat(country = "vn", message = "Invalid Vietnamese phone number format")
+  private String phoneNumber;
 
-    private List<AddressRequest> addresses;
+  private String status;
 
-    private IdentityDocumentRequest identityDocument;
+  private List<AddressRequest> addresses;
 
-    public @NotBlank(message = "Student id must be not blank") String getStudentId() {
-        return studentId;
-    }
+  private IdentityDocumentRequest identityDocument;
 
-    public void setStudentId(@NotBlank(message = "Student id must be not blank") String studentId) {
-        this.studentId = studentId;
-    }
+  public @NotBlank(message = "Student id must be not blank") String getStudentId() {
+    return studentId;
+  }
 
-    public @NotBlank(message = "First name must be not blank") String getFullName() {
-        return fullName;
-    }
+  public void setStudentId(@NotBlank(message = "Student id must be not blank") String studentId) {
+    this.studentId = studentId;
+  }
 
-    public void setFullName(@NotBlank(message = "First name must be not blank") String fullName) {
-        this.fullName = fullName;
-    }
+  public @NotBlank(message = "First name must be not blank") String getFullName() {
+    return fullName;
+  }
 
-    public Date getBirthday() {
-        return birthday;
-    }
+  public void setFullName(@NotBlank(message = "First name must be not blank") String fullName) {
+    this.fullName = fullName;
+  }
 
-    public void setBirthday(Date birthday) {
-        this.birthday = birthday;
-    }
+  public Date getBirthday() {
+    return birthday;
+  }
 
-    public Gender getGender() {
-        return gender;
-    }
+  public void setBirthday(Date birthday) {
+    this.birthday = birthday;
+  }
 
-    public void setGender(Gender gender) {
-        this.gender = gender;
-    }
+  public Gender getGender() {
+    return gender;
+  }
 
-    public String getDepartment() {
-        return department;
-    }
+  public void setGender(Gender gender) {
+    this.gender = gender;
+  }
 
-    public void setDepartment(String department) {
-        this.department = department;
-    }
+  public String getDepartment() {
+    return department;
+  }
 
-    public String getCourse() {
-        return course;
-    }
+  public void setDepartment(String department) {
+    this.department = department;
+  }
 
-    public void setCourse(String course) {
-        this.course = course;
-    }
+  public String getCourse() {
+    return course;
+  }
 
-    public String getProgram() {
-        return program;
-    }
+  public void setCourse(String course) {
+    this.course = course;
+  }
 
-    public void setProgram(String program) {
-        this.program = program;
-    }
+  public String getProgram() {
+    return program;
+  }
 
-    public String getNationality() {
-        return nationality;
-    }
+  public void setProgram(String program) {
+    this.program = program;
+  }
 
-    public void setNationality(String nationality) {
-        this.nationality = nationality;
-    }
+  public String getNationality() {
+    return nationality;
+  }
 
-    public @Email(message = "Email invalid") String getEmail() {
-        return email;
-    }
+  public void setNationality(String nationality) {
+    this.nationality = nationality;
+  }
 
-    public void setEmail(@Email(message = "Email invalid") String email) {
-        this.email = email;
-    }
+  public @Email(message = "Email invalid") String getEmail() {
+    return email;
+  }
 
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
+  public void setEmail(@Email(message = "Email invalid") String email) {
+    this.email = email;
+  }
 
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
+  public String getPhoneNumber() {
+    return phoneNumber;
+  }
 
-    public String getStatus() {
-        return status;
-    }
+  public void setPhoneNumber(String phoneNumber) {
+    this.phoneNumber = phoneNumber;
+  }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
+  public String getStatus() {
+    return status;
+  }
 
-    public List<AddressRequest> getAddresses() {
-        return addresses;
-    }
+  public void setStatus(String status) {
+    this.status = status;
+  }
 
-    public void setAddresses(List<AddressRequest> addresses) {
-        this.addresses = addresses;
-    }
+  public List<AddressRequest> getAddresses() {
+    return addresses;
+  }
 
-    public IdentityDocumentRequest getIdentityDocument() {
-        return identityDocument;
-    }
+  public void setAddresses(List<AddressRequest> addresses) {
+    this.addresses = addresses;
+  }
 
-    public void setIdentityDocument(IdentityDocumentRequest identityDocument) {
-        this.identityDocument = identityDocument;
-    }
+  public IdentityDocumentRequest getIdentityDocument() {
+    return identityDocument;
+  }
+
+  public void setIdentityDocument(IdentityDocumentRequest identityDocument) {
+    this.identityDocument = identityDocument;
+  }
 }

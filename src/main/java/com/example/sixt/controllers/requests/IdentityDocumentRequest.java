@@ -1,6 +1,6 @@
 package com.example.sixt.controllers.requests;
 
-import com.example.sixt.commons.IdentityType;
+import com.example.sixt.enums.IdentityType;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotBlank;

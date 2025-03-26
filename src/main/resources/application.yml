@@ -1,0 +1,68 @@
+server:
+  port: 8080
+
+BACKEND_HOST: "http://localhost:8080"
+
+spring:
+  application:
+    name: sixt
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  cache:
+    type: redis
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+openapi:
+  service:
+    api-docs: sixt
+    server: ${BACKEND_HOST:http://localhost:${server.port}}
+    title: SixT
+    version: 1.0.0
+
+logging:
+  file:
+    name: logs/application.log
+
+app:
+  allowed:
+    email:
+      domain: "@student.university.edu.vn"
+
+  phone:
+    formats:
+      vn:
+        code: "+84"
+        min-length: 10
+        max-length: 12
+        regex: "^(\\+84|0)(3[2-9]|5[6-9]|7[0-9]|8[1-9]|9[0-9])[0-9]{7}$"
+      us:
+        code: "+1"
+        min-length: 11
+        max-length: 11
+        regex: "^\\+1[2-9][0-9]{9}$"
+      jp:
+        code: "+81"
+        min-length: 11
+        max-length: 11
+        regex: "^\\+81[7-9]0[0-9]{8}$"

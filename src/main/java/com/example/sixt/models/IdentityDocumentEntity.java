@@ -1,6 +1,6 @@
 package com.example.sixt.models;
 
-import com.example.sixt.commons.IdentityType;
+import com.example.sixt.enums.IdentityType;
 import jakarta.persistence.*;
 
 import java.util.Date;
