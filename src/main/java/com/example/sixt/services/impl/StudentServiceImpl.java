@@ -3,11 +3,15 @@ package com.example.sixt.services.impl;
 import com.example.sixt.controllers.requests.AddressRequest;
 import com.example.sixt.controllers.requests.StudentCreationRequest;
 import com.example.sixt.controllers.requests.StudentUpdateRequest;
+import com.example.sixt.controllers.requests.IdentityDocumentRequest;
 import com.example.sixt.controllers.responses.StudentResponse;
 import com.example.sixt.exceptions.InvalidDataException;
 import com.example.sixt.models.*;
 import com.example.sixt.repositories.*;
 import com.example.sixt.services.StudentService;
+import com.example.sixt.validators.status.ValidStatusTransitionValidator;
+import com.example.sixt.enums.StudentStatus;
+import jakarta.validation.ConstraintValidatorContext;
 import org.modelmapper.ModelMapper;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -24,6 +28,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.lang.annotation.Annotation;
+import com.example.sixt.validators.status.ValidStatusTransition;
+import jakarta.validation.Payload;
 
 @Service
 public class StudentServiceImpl implements StudentService {
@@ -36,6 +44,7 @@ public class StudentServiceImpl implements StudentService {
     private final ProgramRepository programRepository;
     private final DepartmentRepository departmentRepository;
     private final StudentStatusRepository studentStatusRepository;
+    private final ValidStatusTransitionValidator statusValidator;
     private static final Logger log = LoggerFactory.getLogger(StudentServiceImpl.class);
 
     @Autowired
@@ -47,7 +56,8 @@ public class StudentServiceImpl implements StudentService {
                               IdentityDocumentRepository identityDocumentRepository,
                               ProgramRepository programRepository,
                               DepartmentRepository departmentRepository,
-                              StudentStatusRepository studentStatusRepository) {
+                              StudentStatusRepository studentStatusRepository,
+                              ValidStatusTransitionValidator statusValidator) {
         this.studentRepository = studentRepository;
         this.modelMapper = modelMapper;
         this.redisTemplate = redisTemplate;
@@ -57,6 +67,7 @@ public class StudentServiceImpl implements StudentService {
         this.programRepository = programRepository;
         this.departmentRepository = departmentRepository;
         this.studentStatusRepository = studentStatusRepository;
+        this.statusValidator = statusValidator;
     }
 
     @Override
@@ -195,28 +206,17 @@ public class StudentServiceImpl implements StudentService {
 
             StudentResponse studentResponse = modelMapper.map(existingStudent, StudentResponse.class);
             updateStudentFields(existingStudent, updatedStudent, studentResponse);
-            List <AddressEntity> savedAddressEntities = new ArrayList<>();
-            IdentityDocumentEntity savedIdentityDocument = new IdentityDocumentEntity();
-            if (updatedStudent.getAddresses() != null) {
-                addressRepository.deleteAllByStudentId(studentId);
-                List<AddressEntity> addressEntities = updatedStudent.getAddresses().stream()
-                        .map(address -> modelMapper.map(address, AddressEntity.class))
-                        .collect(Collectors.toList());
-                addressEntities.forEach(address -> address.setStudentId(studentId));
-                savedAddressEntities = addressRepository.saveAll(addressEntities);
-            }
-
-            if (updatedStudent.getIdentityDocument() != null) {
-                identityDocumentRepository.deleteByStudentId(studentId);
-                IdentityDocumentEntity identityDocumentEntity = modelMapper.map(updatedStudent.getIdentityDocument(), IdentityDocumentEntity.class);
-                identityDocumentEntity.setStudentId(studentId);
-                savedIdentityDocument = identityDocumentRepository.save(identityDocumentEntity);
-            }
+            
+            List<AddressEntity> savedAddressEntities = updateStudentAddresses(studentId, updatedStudent.getAddresses());
+            IdentityDocumentEntity savedIdentityDocument = updateStudentIdentity(studentId, updatedStudent.getIdentityDocument());
 
             studentRepository.save(existingStudent);
 
-            studentResponse.setAddresses(savedAddressEntities.size() != 0 ? savedAddressEntities : addressRepository.findAllByStudentId(studentId));
-            studentResponse.setIdentityDocument(savedIdentityDocument.getId() != null ? savedIdentityDocument : identityDocumentRepository.findByStudentId(studentId));
+            studentResponse.setAddresses(savedAddressEntities.isEmpty() ? 
+                addressRepository.findAllByStudentId(studentId) : savedAddressEntities);
+            
+            studentResponse.setIdentityDocument(savedIdentityDocument.getId() != null ? 
+                savedIdentityDocument : identityDocumentRepository.findByStudentId(studentId));
 
             redisTemplate.opsForValue().set("student:" + studentId, existingStudent);
 
@@ -230,14 +230,14 @@ public class StudentServiceImpl implements StudentService {
         }
         catch (InvalidDataException e) {
             log.error(e.getMessage());
-            throw new InvalidDataException(e.getMessage());
+            throw e;
         }
         catch (Exception e) {
-            log.error("Error updating student.");
-            throw new RuntimeException("Error updating student.");
+            log.error("Error updating student: {}", e.getMessage());
+            throw new RuntimeException("Error updating student.", e);
         }
         finally {
-            if (lock.isHeldByCurrentThread()) {
+            if (lock != null && lock.isHeldByCurrentThread()) {
                 lock.unlock();
             }
         }
@@ -402,12 +402,87 @@ public class StudentServiceImpl implements StudentService {
             existingStudent.setPhoneNumber(updatedStudent.getPhoneNumber());
             studentResponse.setPhoneNumber(updatedStudent.getPhoneNumber());
         }
-        StudentStatusEntity studentStatusEntity = studentStatusRepository.findByName(updatedStudent.getStatus());
-        if (updatedStudent.getStatus() != null && studentStatusEntity != null) {
-            existingStudent.setStatus(studentStatusEntity.getId());
-            studentResponse.setStatus(studentStatusEntity.getName());
+        validateAndUpdateStatus(existingStudent, updatedStudent.getStatus(), studentResponse);
+    }
+
+    private void validateAndUpdateStatus(StudentEntity existingStudent, String newStatusName, StudentResponse studentResponse) {
+        if (newStatusName == null) {
+            return;
+        }
+        
+        StudentStatusEntity newStatusEntity = studentStatusRepository.findByName(newStatusName);
+        if (newStatusEntity == null) {
+            throw new InvalidDataException("Status does not exist: " + newStatusName);
+        }
+        
+        StudentStatusEntity currentStatusEntity = studentStatusRepository.findById(existingStudent.getStatus())
+            .orElseThrow(() -> new InvalidDataException("Current status of student is invalid"));
+        
+        // If status hasn't changed, do nothing
+        if (currentStatusEntity.getId().equals(newStatusEntity.getId())) {
+            studentResponse.setStatus(currentStatusEntity.getName());
+            return;
+        }
+        
+        try {
+            StudentStatus currentStatusEnum = StudentStatus.valueOf(currentStatusEntity.getName());
+            StudentStatus newStatusEnum = StudentStatus.valueOf(newStatusName);
+                
+            // Check if the transition is a downgrade
+            if (newStatusEnum.ordinal() < currentStatusEnum.ordinal()) {
+                throw new InvalidDataException(
+                    String.format("Cannot downgrade status from %s to %s", 
+                        currentStatusEntity.getName(), newStatusName)
+                );
+            }
+            
+            // Validate transition using the rules
+            Map<StudentStatus, Set<StudentStatus>> rules = statusValidator.getStatusTransitionRules();
+            Set<StudentStatus> allowedTransitions = rules.get(currentStatusEnum);
+            
+            if (allowedTransitions == null || !allowedTransitions.contains(newStatusEnum)) {
+                throw new InvalidDataException(
+                    String.format("Cannot transition from %s to %s", 
+                        currentStatusEntity.getName(), newStatusName)
+                );
+            }
+            
+            log.info("Updating student status from {} to {}", currentStatusEntity.getName(), newStatusName);
+            existingStudent.setStatus(newStatusEntity.getId());
+            studentResponse.setStatus(newStatusEntity.getName());
+        } catch (InvalidDataException e) {
+            throw e;
+        } catch (IllegalArgumentException e) {
+            throw new InvalidDataException("Invalid status: " + newStatusName);
+        } catch (Exception e) {
+            log.error("Error validating status transition: {}", e.getMessage());
+            throw new InvalidDataException("Error validating status transition");
         }
     }
 
+    private List<AddressEntity> updateStudentAddresses(String studentId, List<AddressRequest> addresses) {
+        if (addresses == null) {
+            return List.of();
+        }
+        
+        addressRepository.deleteAllByStudentId(studentId);
+        List<AddressEntity> addressEntities = addresses.stream()
+                .map(address -> modelMapper.map(address, AddressEntity.class))
+                .peek(address -> address.setStudentId(studentId))
+                .collect(Collectors.toList());
+                
+        return addressRepository.saveAll(addressEntities);
+    }
+
+    private IdentityDocumentEntity updateStudentIdentity(String studentId, IdentityDocumentRequest identityDocument) {
+        if (identityDocument == null) {
+            return new IdentityDocumentEntity();
+        }
+        
+        identityDocumentRepository.deleteByStudentId(studentId);
+        IdentityDocumentEntity identityDocumentEntity = modelMapper.map(identityDocument, IdentityDocumentEntity.class);
+        identityDocumentEntity.setStudentId(studentId);
+        return identityDocumentRepository.save(identityDocumentEntity);
+    }
 
 }
