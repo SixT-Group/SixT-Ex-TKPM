@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-
 import java.util.Date;
 
 @Entity
@@ -17,14 +16,22 @@ public class CourseRegistrationEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne
+    @JoinColumn(name = "student_id", nullable = false)
+    private StudentEntity student;
+
+    @ManyToOne
+    @JoinColumn(name = "course_id", nullable = false)
+    private CourseEntity course;
+
     @Column(name = "class_id", nullable = false)
     private String classId;
 
-    @Column(name = "course_id", nullable = false)
-    private String courseId;
+    @Column(nullable = false)
+    private String semester;
 
-    @Column(name = "student_id", nullable = false)
-    private String studentId;
+    @Column(nullable = false)
+    private Integer academicYear;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -43,7 +50,7 @@ public class CourseRegistrationEntity {
     @CreationTimestamp
     private Date createdAt;
 
-    @Column(name = "updated_at", updatable = false)
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     @CreationTimestamp
     private Date updatedAt;

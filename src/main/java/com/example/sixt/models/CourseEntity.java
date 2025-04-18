@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-
 import java.util.Date;
 
 @Entity
@@ -23,26 +22,31 @@ public class CourseEntity {
     @Column(name = "course_name", nullable = false)
     private String courseName;
 
+    @Column(nullable = false)
     private Long credits;
 
-    @Column(name = "department_id")
-    private Long departmentId;
+    @Column(nullable = false)
+    private Integer maxStudents;
+
+    @ManyToOne
+    @JoinColumn(name = "department_id", nullable = false)
+    private DepartmentEntity department;
 
     private String description;
 
     @Column(name = "prerequisite_course")
-    private String prerequisiteCourse; // reference to courseId
+    private String prerequisiteCourse;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private CourseStatus status = CourseStatus.ACTIVATED; // when you want to delete a course, set this attribute to 'deactivated'
+    private CourseStatus status = CourseStatus.ACTIVATED;
 
     @Column(name = "created_at", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     @CreationTimestamp
     private Date createdAt;
 
-    @Column(name = "updated_at", updatable = false)
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     @CreationTimestamp
     private Date updatedAt;
