@@ -1,6 +1,6 @@
 package com.example.sixt.repositories;
 
-import com.example.sixt.enums.RegistrationStatus;
+import com.example.sixt.enums.CourseProcessStatus;
 import com.example.sixt.models.CourseRegistrationEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -11,5 +11,5 @@ public interface CourseRegistrationRepository extends JpaRepository<CourseRegist
     List<CourseRegistrationEntity> findByStudentIdAndSemesterAndAcademicYear(
         Long studentId, String semester, Integer academicYear);
     boolean existsById(Long id);
-    long countByCourseIdAndStatus(Long courseId, RegistrationStatus status);
+    long countByCourseIdAndStatus(Long courseId, CourseProcessStatus status);
 }

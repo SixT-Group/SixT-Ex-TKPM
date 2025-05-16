@@ -4,6 +4,14 @@ import com.example.sixt.controllers.requests.ProgramCreationRequest;
 import com.example.sixt.exceptions.InvalidDataException;
 import com.example.sixt.models.ProgramEntity;
 import com.example.sixt.services.ProgramService;
+import com.example.sixt.util.MessageUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,24 +21,53 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/programs")
+@RequestMapping("api/v1/programs")
+@Tag(name = "Program Controller", description = "API endpoints for managing programs with internationalization support")
 public class ProgramController {
     private final ProgramService programService;
+    private final MessageUtil messageUtil;
     private static final Logger log = LoggerFactory.getLogger(ProgramController.class);
 
     @Autowired
-    public ProgramController(ProgramService programService) {
+    public ProgramController(ProgramService programService, MessageUtil messageUtil) {
         this.programService = programService;
+        this.messageUtil = messageUtil;
     }
 
     @PutMapping("/{id}")
-    public Map<String, Object> updateProgram(@PathVariable Long id, @RequestParam String program) {
+    @Operation(
+        summary = "Update a program",
+        description = "Updates a program with the given ID. Messages are displayed in the language specified by Accept-Language header."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "Program updated successfully",
+            content = @Content(schema = @Schema(implementation = Map.class))
+        ),
+        @ApiResponse(
+            responseCode = "409",
+            description = "Invalid data provided",
+            content = @Content(schema = @Schema(implementation = Map.class))
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Internal server error",
+            content = @Content(schema = @Schema(implementation = Map.class))
+        )
+    })
+    public Map<String, Object> updateProgram(
+        @Parameter(description = "ID of the program to update")
+        @PathVariable Long id, 
+        @Parameter(description = "New program name")
+        @RequestParam String program
+    ) {
         try {
             log.info("Updating program for id: {}", id);
             ProgramEntity updatedProgram = programService.updateProgram(id, program);
             Map<String, Object> response = new HashMap<>();
             response.put("status", "201");
-            response.put("message", "Program updated successfully");
+            response.put("message", messageUtil.getMessage("program.update.success"));
             response.put("data", updatedProgram);
             return response;
         }
@@ -46,20 +83,44 @@ public class ProgramController {
             log.error("Error updating program: {}", e.getMessage());
             Map<String, Object> response = new HashMap<>();
             response.put("status", "500");
-            response.put("message", e.getMessage());
+            response.put("message", messageUtil.getMessage("system.error.bad.request"));
             response.put("data", 0);
             return response;
         }
     }
 
     @PostMapping
-    public Map<String, Object> addProgram(@RequestBody ProgramCreationRequest programCreationRequest) {
+    @Operation(
+        summary = "Add a new program",
+        description = "Creates a new program and returns the created program details. Messages are displayed in the language specified by Accept-Language header."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "Program created successfully",
+            content = @Content(schema = @Schema(implementation = Map.class))
+        ),
+        @ApiResponse(
+            responseCode = "409",
+            description = "Invalid data provided",
+            content = @Content(schema = @Schema(implementation = Map.class))
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Internal server error",
+            content = @Content(schema = @Schema(implementation = Map.class))
+        )
+    })
+    public Map<String, Object> addProgram(
+        @Parameter(description = "Program details to create")
+        @RequestBody ProgramCreationRequest programCreationRequest
+    ) {
         try {
             log.info("Adding new program: {}", programCreationRequest.getName());
             ProgramEntity newProgram = programService.addProgram(programCreationRequest);
             Map<String, Object> response = new HashMap<>();
             response.put("status", "201");
-            response.put("message", "Program added successfully");
+            response.put("message", messageUtil.getMessage("program.create.success"));
             response.put("data", newProgram);
             return response;
         }
@@ -75,20 +136,44 @@ public class ProgramController {
             log.error("Error adding program: {}", e.getMessage());
             Map<String, Object> response = new HashMap<>();
             response.put("status", "500");
-            response.put("message", e.getMessage());
+            response.put("message", messageUtil.getMessage("system.error.bad.request"));
             response.put("data", 0);
             return response;
         }
     }
 
     @GetMapping("/{id}")
-    public Map<String, Object> getStatusById(@PathVariable Long id) {
+    @Operation(
+        summary = "Get program by ID",
+        description = "Retrieves a program by its ID. Messages are displayed in the language specified by Accept-Language header."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Program fetched successfully",
+            content = @Content(schema = @Schema(implementation = Map.class))
+        ),
+        @ApiResponse(
+            responseCode = "409",
+            description = "Program not found",
+            content = @Content(schema = @Schema(implementation = Map.class))
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Internal server error",
+            content = @Content(schema = @Schema(implementation = Map.class))
+        )
+    })
+    public Map<String, Object> getStatusById(
+        @Parameter(description = "ID of the program to retrieve")
+        @PathVariable Long id
+    ) {
         try {
             log.info("Fetching program by id: {}", id);
             ProgramEntity programEntity = programService.getProgramById(id);
             Map<String, Object> response = new HashMap<>();
             response.put("status", "200");
-            response.put("message", "Program fetched successfully");
+            response.put("message", messageUtil.getMessage("program.search.success"));
             response.put("data", programEntity);
             return response;
         }
@@ -104,7 +189,7 @@ public class ProgramController {
             log.error("Error fetching program: {}", e.getMessage());
             Map<String, Object> response = new HashMap<>();
             response.put("status", "500");
-            response.put("message", e.getMessage());
+            response.put("message", messageUtil.getMessage("system.error.bad.request"));
             response.put("data", 0);
             return response;
         }
