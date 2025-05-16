@@ -1,6 +1,6 @@
 package com.example.sixt.services.impl;
 
-import com.example.sixt.enums.RegistrationStatus;
+import com.example.sixt.enums.CourseProcessStatus;
 import com.example.sixt.exceptions.InvalidDataException;
 import com.example.sixt.models.CourseEntity;
 import com.example.sixt.models.CourseRegistrationEntity;
@@ -12,7 +12,6 @@ import com.example.sixt.services.CourseRegistrationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -50,7 +49,7 @@ public class CourseRegistrationServiceImpl implements CourseRegistrationService 
 
         // Check course capacity
         long currentRegistrations = registrationRepository.countByCourseIdAndStatus(
-            courseId, RegistrationStatus.APPROVED);
+            courseId, CourseProcessStatus.ONGOING);
         if (currentRegistrations >= course.getMaxStudents()) {
             throw new InvalidDataException("Course is full");
         }
@@ -60,8 +59,7 @@ public class CourseRegistrationServiceImpl implements CourseRegistrationService 
         registration.setCourse(course);
         registration.setSemester(semester);
         registration.setAcademicYear(academicYear);
-        registration.setRegistrationDate(LocalDateTime.now());
-        registration.setStatus(RegistrationStatus.PENDING);
+        registration.setStatus(CourseProcessStatus.ONGOING);
 
         return registrationRepository.save(registration);
     }
@@ -72,13 +70,12 @@ public class CourseRegistrationServiceImpl implements CourseRegistrationService 
         CourseRegistrationEntity registration = registrationRepository.findById(registrationId)
             .orElseThrow(() -> new InvalidDataException("Registration not found"));
 
-        // Only allow cancellation if status is PENDING or APPROVED
-        if (registration.getStatus() != RegistrationStatus.PENDING 
-            && registration.getStatus() != RegistrationStatus.APPROVED) {
+        // Only allow cancellation if status is ONGOING
+        if (registration.getStatus() != CourseProcessStatus.ONGOING) {
             throw new InvalidDataException("Cannot cancel registration with status: " + registration.getStatus());
         }
 
-        registration.setStatus(RegistrationStatus.CANCELLED);
+        registration.setStatus(CourseProcessStatus.TERMINATED);
         registrationRepository.save(registration);
     }
 
@@ -92,5 +89,4 @@ public class CourseRegistrationServiceImpl implements CourseRegistrationService 
         return registrationRepository.findByStudentIdAndSemesterAndAcademicYear(
             studentId, semester, academicYear);
     }
-
 }

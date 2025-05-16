@@ -1,10 +1,12 @@
 package com.example.sixt.exceptions;
 
+import com.example.sixt.util.MessageUtil;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -19,6 +21,9 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestControllerAdvice
 public class GlobalException {
+
+    @Autowired
+    private MessageUtil messageUtil;
 
     /**
      * Handle exception when validate data
@@ -58,16 +63,16 @@ public class GlobalException {
             int start = message.lastIndexOf("[") + 1;
             int end = message.lastIndexOf("]") - 1;
             message = message.substring(start, end);
-            errorResponse.setError("Invalid Payload");
+            errorResponse.setError(messageUtil.getMessage("system.error.bad.request"));
             errorResponse.setMessage(message);
         } else if (e instanceof MissingServletRequestParameterException) {
-            errorResponse.setError("Invalid Parameter");
+            errorResponse.setError(messageUtil.getMessage("system.error.bad.request"));
             errorResponse.setMessage(message);
         } else if (e instanceof ConstraintViolationException) {
-            errorResponse.setError("Invalid Parameter");
+            errorResponse.setError(messageUtil.getMessage("system.error.bad.request"));
             errorResponse.setMessage(message.substring(message.indexOf(" ") + 1));
         } else {
-            errorResponse.setError("Invalid Data");
+            errorResponse.setError(messageUtil.getMessage("common.error"));
             errorResponse.setMessage(message);
         }
 
@@ -142,7 +147,7 @@ public class GlobalException {
         errorResponse.setTimestamp(new Date());
         errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
         errorResponse.setStatus(INTERNAL_SERVER_ERROR.value());
-        errorResponse.setError(INTERNAL_SERVER_ERROR.getReasonPhrase());
+        errorResponse.setError(messageUtil.getMessage("common.error"));
         errorResponse.setMessage(e.getMessage());
 
         return errorResponse;
