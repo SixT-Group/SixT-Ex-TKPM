@@ -40,10 +40,15 @@ public class StudentEntity implements Serializable {
   @Enumerated(EnumType.STRING)
   private Gender gender;
 
-  private Long department;
+  @ManyToOne
+  @JoinColumn(name = "department_id")
+  private DepartmentEntity department;
 
   private String course;
-  private Long program;
+  
+  @ManyToOne
+  @JoinColumn(name = "program_id")
+  private ProgramEntity program;
 
   private String nationality;
 
@@ -53,7 +58,9 @@ public class StudentEntity implements Serializable {
   @Column(name = "phone_number")
   private String phoneNumber;
 
-  private Long status;
+  @ManyToOne
+  @JoinColumn(name = "status_id")
+  private StudentStatusEntity status;
 
   @Column(name = "created_at", length = 255)
   @Temporal(TemporalType.TIMESTAMP)
